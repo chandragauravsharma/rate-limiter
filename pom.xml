@@ -1,0 +1,11 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.rate-limiter.app</groupId>
+    <artifactId>rate-limiter</artifactId>
+    <version>0.0.1</version>
+    <properties>
+        <maven.compiler.source>19</maven.compiler.source>
+        <maven.compiler.target>19</maven.compiler.target>
+    </properties>
+</project>

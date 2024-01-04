@@ -1,0 +1,5 @@
+
+app:
+  token-bucket:
+    default-tokens: 10
+    refresh-interval: 1

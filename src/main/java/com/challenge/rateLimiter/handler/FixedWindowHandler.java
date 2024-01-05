@@ -12,30 +12,30 @@ import java.util.Map;
 @ConfigurationProperties("app")
 @Component
 public class FixedWindowHandler {
-    private static Map<String, FixedWindowData> fixedWindowDataMap;
+    private static Map<String, FixedWindowData> fixedWindowCache;
     @Value("${app.fixed-window.window-size-in-secs}")
     private int windowSizeInSec;
     @Value("${app.fixed-window.max-allowed-requests-per-window}")
     private int maxAllowedRequestsPerWindow;
 
     public FixedWindowHandler() {
-        this.fixedWindowDataMap = new HashMap<>();
+        fixedWindowCache = new HashMap<>();
     }
 
     public Mono<Boolean> rateLimit(String clientId) {
-        if (fixedWindowDataMap.containsKey(clientId)) {
-            int elapsedTimeInSec = (int)((System.currentTimeMillis() / 1000) - (fixedWindowDataMap.get(clientId).getLastWindowStartTime() / 1000));
+        if (fixedWindowCache.containsKey(clientId)) {
+            int elapsedTimeInSec = (int)((System.currentTimeMillis() / 1000) - (fixedWindowCache.get(clientId).getLastWindowStartTime() / 1000));
             // check for a new window or not
             if (elapsedTimeInSec >= windowSizeInSec) {
                 // new window starts here
                 FixedWindowData data = FixedWindowData.builder().allowedRequestCount(1).lastWindowStartTime(System.currentTimeMillis()).build();
-                fixedWindowDataMap.put(clientId, data);
+                fixedWindowCache.put(clientId, data);
                 return Mono.just(true);
             } else {
-                if (fixedWindowDataMap.get(clientId).getAllowedRequestCount() < maxAllowedRequestsPerWindow) {
-                    FixedWindowData data = fixedWindowDataMap.get(clientId);
+                if (fixedWindowCache.get(clientId).getAllowedRequestCount() < maxAllowedRequestsPerWindow) {
+                    FixedWindowData data = fixedWindowCache.get(clientId);
                     data.setAllowedRequestCount(data.getAllowedRequestCount() + 1);
-                    fixedWindowDataMap.put(clientId, data);
+                    fixedWindowCache.put(clientId, data);
                     return Mono.just(true);
                 } else {
                     // fail
@@ -45,7 +45,7 @@ public class FixedWindowHandler {
         } else {
             // first time
             FixedWindowData data = FixedWindowData.builder().allowedRequestCount(1).lastWindowStartTime(System.currentTimeMillis()).build();
-            fixedWindowDataMap.put(clientId, data);
+            fixedWindowCache.put(clientId, data);
             return Mono.just(true);
         }
     }

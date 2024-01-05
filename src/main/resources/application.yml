@@ -11,4 +11,4 @@ app:
 
   sliding-window:
     window-size-in-secs: 10
-    max-allowed-requests-per-window: 10
+    max-allowed-requests-per-window: 100

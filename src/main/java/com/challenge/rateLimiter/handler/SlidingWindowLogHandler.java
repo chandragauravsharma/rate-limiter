@@ -13,14 +13,14 @@ import java.util.Queue;
 @ConfigurationProperties("app")
 @Component
 public class SlidingWindowLogHandler {
-    private Map<String, Queue<Long>> slidingWindowCache;
+    private static Map<String, Queue<Long>> slidingWindowCache;
     @Value("${app.sliding-window.window-size-in-secs}")
     private int windowSizeInSec;
     @Value("${app.sliding-window.max-allowed-requests-per-window}")
     private int maxAllowedRequestsPerWindow;
 
     public SlidingWindowLogHandler() {
-        this.slidingWindowCache = new HashMap<>();
+        slidingWindowCache = new HashMap<>();
     }
     public Mono<Boolean> rateLimit(String clientId) {
         long currentTime = System.currentTimeMillis();

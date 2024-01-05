@@ -12,7 +12,7 @@ import java.util.Map;
 @ConfigurationProperties("app")
 @Component
 public class TokenBucketHandler {
-    private static Map<String, TokenBucket> tokenBucketMap;
+    private static Map<String, TokenBucket> tokenBucketCache;
     @Value("${app.token-bucket.max-default-tokens}")
     private int maxDefaultTokens;
     @Value("${app.token-bucket.refresh-interval}")
@@ -21,12 +21,12 @@ public class TokenBucketHandler {
     private int newTokensEveryRefreshInterval;
 
     public TokenBucketHandler() {
-        tokenBucketMap = new HashMap<>();
+        tokenBucketCache = new HashMap<>();
     }
     public Mono<Boolean> rateLimit(String clientId) {
-        if (tokenBucketMap.containsKey(clientId)) {
+        if (tokenBucketCache.containsKey(clientId)) {
             // not first time user
-            TokenBucket tokenBucket = tokenBucketMap.get(clientId);
+            TokenBucket tokenBucket = tokenBucketCache.get(clientId);
             long elapsedTimeInSecs = (System.currentTimeMillis() - tokenBucket.getLastUpdateTimeStamp()) / (refreshInterval * 1000);
             int newTokens = tokenBucket.getTokens() + ((int)elapsedTimeInSecs * newTokensEveryRefreshInterval); // 1 token every sec here
             if (newTokens > maxDefaultTokens) {
@@ -41,7 +41,7 @@ public class TokenBucketHandler {
                 newTokens--;
                 tokenBucket.setTokens(newTokens);
                 tokenBucket.setLastUpdateTimeStamp(newTimeUpdate);
-                tokenBucketMap.put(clientId, tokenBucket);
+                tokenBucketCache.put(clientId, tokenBucket);
                 return Mono.just(true);
             } else {
                 return Mono.just(false);
@@ -52,7 +52,7 @@ public class TokenBucketHandler {
             TokenBucket tokenBucket = new TokenBucket();
             tokenBucket.setTokens(maxDefaultTokens - 1);
             tokenBucket.setLastUpdateTimeStamp(System.currentTimeMillis());
-            tokenBucketMap.put(clientId, tokenBucket);
+            tokenBucketCache.put(clientId, tokenBucket);
             return Mono.just(true);
         }
     }

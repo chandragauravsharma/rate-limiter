@@ -1,6 +1,7 @@
 package com.challenge.rateLimiter.service;
 
 import com.challenge.rateLimiter.handler.FixedWindowHandler;
+import com.challenge.rateLimiter.handler.SlidingWindowLogHandler;
 import com.challenge.rateLimiter.handler.TokenBucketHandler;
 import com.challenge.rateLimiter.model.response.RateLimitResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,11 @@ public class RateLimitService {
     TokenBucketHandler tokenBucketHandler;
     @Autowired
     FixedWindowHandler fixedWindowHandler;
+    @Autowired
+    SlidingWindowLogHandler slidingWindowLogHandler;
 
     public Mono<RateLimitResponse> rateLimit(String clientId) {
-        return fixedWindowHandler.rateLimit(clientId)
+        return slidingWindowLogHandler.rateLimit(clientId)
                 .map(rateLimited -> {
                     RateLimitResponse response = new RateLimitResponse();
                     if (rateLimited) {

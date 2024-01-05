@@ -8,3 +8,7 @@ app:
   fixed-window:
     window-size-in-secs: 60
     max-allowed-requests-per-window: 60
+
+  sliding-window:
+    window-size-in-secs: 10
+    max-allowed-requests-per-window: 10

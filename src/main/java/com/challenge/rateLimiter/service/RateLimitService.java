@@ -1,7 +1,9 @@
 package com.challenge.rateLimiter.service;
 
+import com.challenge.rateLimiter.handler.FixedWindowHandler;
+import com.challenge.rateLimiter.handler.SlidingWindowCounterHandler;
+import com.challenge.rateLimiter.handler.SlidingWindowLogHandler;
 import com.challenge.rateLimiter.handler.TokenBucketHandler;
-import com.challenge.rateLimiter.model.request.RateLimitRequest;
 import com.challenge.rateLimiter.model.response.RateLimitResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,9 +13,15 @@ import reactor.core.publisher.Mono;
 public class RateLimitService {
     @Autowired
     TokenBucketHandler tokenBucketHandler;
+    @Autowired
+    FixedWindowHandler fixedWindowHandler;
+    @Autowired
+    SlidingWindowLogHandler slidingWindowLogHandler;
+    @Autowired
+    SlidingWindowCounterHandler slidingWindowCounterHandler;
 
     public Mono<RateLimitResponse> rateLimit(String clientId) {
-        return tokenBucketHandler.rateLimit(clientId)
+        return slidingWindowCounterHandler.rateLimit(clientId)
                 .map(rateLimited -> {
                     RateLimitResponse response = new RateLimitResponse();
                     if (rateLimited) {

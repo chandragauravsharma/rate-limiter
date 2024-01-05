@@ -1,5 +1,14 @@
 
 app:
   token-bucket:
-    default-tokens: 10
+    max-default-tokens: 10
     refresh-interval: 1
+    new-tokens-every-refresh-interval: 1
+
+  fixed-window:
+    window-size-in-secs: 60
+    max-allowed-requests-per-window: 60
+
+  sliding-window:
+    window-size-in-secs: 10
+    max-allowed-requests-per-window: 100

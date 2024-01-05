@@ -12,50 +12,47 @@ import java.util.Map;
 @ConfigurationProperties("app")
 @Component
 public class TokenBucketHandler {
-    private static Map<String, TokenBucket> tokenBucketMap;
-    @Value("${app.token-bucket.default-tokens}")
-    private int defaultTokens = 10;
+    private static Map<String, TokenBucket> tokenBucketCache;
+    @Value("${app.token-bucket.max-default-tokens}")
+    private int maxDefaultTokens;
     @Value("${app.token-bucket.refresh-interval}")
-    private int refreshInterval = 1; // in secs
+    private int refreshInterval; // in secs
+    @Value("${app.token-bucket.new-tokens-every-refresh-interval}")
+    private int newTokensEveryRefreshInterval;
 
     public TokenBucketHandler() {
-        tokenBucketMap = new HashMap<>();
+        tokenBucketCache = new HashMap<>();
     }
     public Mono<Boolean> rateLimit(String clientId) {
-        if (tokenBucketMap.containsKey(clientId)) {
+        if (tokenBucketCache.containsKey(clientId)) {
             // not first time user
-            TokenBucket tokenBucket = tokenBucketMap.get(clientId);
-            int currentTokens = tokenBucket.getTokens();
-            if (currentTokens <= 0) {
-                long lastUpdatedTime = tokenBucket.getLastUpdateTimeStamp();
-                long elapsedTimeInSecs = (System.currentTimeMillis() - lastUpdatedTime) / (refreshInterval * 1000);
-                int newTokens = (int)elapsedTimeInSecs; // 1 token every sec
-                currentTokens = newTokens;
-                if (currentTokens > defaultTokens) {
-                    currentTokens = defaultTokens;
-                }
-                if (currentTokens > 0) {
-                    currentTokens = currentTokens - 1;
-                    tokenBucket.setTokens(currentTokens);
-                    tokenBucket.setLastUpdateTimeStamp(System.currentTimeMillis());
-                    tokenBucketMap.put(clientId, tokenBucket);
-                    return Mono.just(true);
-                } else {
-                    return Mono.just(false);
-                }
-            } else {
-                currentTokens = currentTokens - 1;
-                tokenBucket.setTokens(currentTokens);
-                tokenBucketMap.put(clientId, tokenBucket);
+            TokenBucket tokenBucket = tokenBucketCache.get(clientId);
+            long elapsedTimeInSecs = (System.currentTimeMillis() - tokenBucket.getLastUpdateTimeStamp()) / (refreshInterval * 1000);
+            int newTokens = tokenBucket.getTokens() + ((int)elapsedTimeInSecs * newTokensEveryRefreshInterval); // 1 token every sec here
+            if (newTokens > maxDefaultTokens) {
+                newTokens = maxDefaultTokens;
+            }
+            long newTimeUpdate = tokenBucket.getLastUpdateTimeStamp();
+            if (elapsedTimeInSecs >= refreshInterval) {
+                newTimeUpdate = System.currentTimeMillis();
+            }
+
+            if (newTokens > 0) {
+                newTokens--;
+                tokenBucket.setTokens(newTokens);
+                tokenBucket.setLastUpdateTimeStamp(newTimeUpdate);
+                tokenBucketCache.put(clientId, tokenBucket);
                 return Mono.just(true);
+            } else {
+                return Mono.just(false);
             }
         } else {
             // first time user
             // set default_tokens - 1 and pass rate limit
             TokenBucket tokenBucket = new TokenBucket();
-            tokenBucket.setTokens(defaultTokens - 1);
+            tokenBucket.setTokens(maxDefaultTokens - 1);
             tokenBucket.setLastUpdateTimeStamp(System.currentTimeMillis());
-            tokenBucketMap.put(clientId, tokenBucket);
+            tokenBucketCache.put(clientId, tokenBucket);
             return Mono.just(true);
         }
     }

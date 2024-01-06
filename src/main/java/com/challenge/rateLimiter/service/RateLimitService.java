@@ -1,9 +1,12 @@
 package com.challenge.rateLimiter.service;
 
-import com.challenge.rateLimiter.handler.FixedWindowHandler;
-import com.challenge.rateLimiter.handler.SlidingWindowCounterHandler;
-import com.challenge.rateLimiter.handler.SlidingWindowLogHandler;
-import com.challenge.rateLimiter.handler.TokenBucketHandler;
+import com.challenge.rateLimiter.handler.RateLimitConfigData;
+import com.challenge.rateLimiter.handler.RateLimitHandler;
+import com.challenge.rateLimiter.handler.RateLimitHandlerFactory;
+import com.challenge.rateLimiter.handler.impl.FixedWindowHandler;
+import com.challenge.rateLimiter.handler.impl.SlidingWindowCounterHandler;
+import com.challenge.rateLimiter.handler.impl.SlidingWindowLogHandler;
+import com.challenge.rateLimiter.handler.impl.TokenBucketHandler;
 import com.challenge.rateLimiter.model.response.RateLimitResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,16 +15,13 @@ import reactor.core.publisher.Mono;
 @Service
 public class RateLimitService {
     @Autowired
-    TokenBucketHandler tokenBucketHandler;
+    RateLimitHandlerFactory handlerFactory;
     @Autowired
-    FixedWindowHandler fixedWindowHandler;
-    @Autowired
-    SlidingWindowLogHandler slidingWindowLogHandler;
-    @Autowired
-    SlidingWindowCounterHandler slidingWindowCounterHandler;
+    RateLimitConfigData configData;
 
     public Mono<RateLimitResponse> rateLimit(String clientId) {
-        return slidingWindowCounterHandler.rateLimit(clientId)
+        return handlerFactory.createHandler(configData)
+                .rateLimit(clientId)
                 .map(rateLimited -> {
                     RateLimitResponse response = new RateLimitResponse();
                     if (rateLimited) {

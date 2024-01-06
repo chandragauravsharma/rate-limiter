@@ -1,7 +1,7 @@
-package com.challenge.rateLimiter.handler;
+package com.challenge.rateLimiter.handler.impl;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import com.challenge.rateLimiter.handler.RateLimitConfigData;
+import com.challenge.rateLimiter.handler.RateLimitHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -10,19 +10,17 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-@ConfigurationProperties("app")
 @Component
-public class SlidingWindowLogHandler {
-    private static Map<String, Queue<Long>> slidingWindowCache;
-    @Value("${app.sliding-window.window-size-in-secs}")
+public class SlidingWindowLogHandler implements RateLimitHandler {
+    private static Map<String, Queue<Long>> slidingWindowCache = new HashMap<>();
     private int windowSizeInSec;
-    @Value("${app.sliding-window.max-allowed-requests-per-window}")
     private int maxAllowedRequestsPerWindow;
 
-    public SlidingWindowLogHandler() {
-        slidingWindowCache = new HashMap<>();
+    public SlidingWindowLogHandler(RateLimitConfigData configData) {
+        this.windowSizeInSec = configData.getWindowSizeInSecSW();
+        this.maxAllowedRequestsPerWindow = configData.getMaxAllowedRequestsPerWindowSW();
     }
-    public Mono<Boolean> rateLimit(String clientId) {
+    public synchronized Mono<Boolean> rateLimit(String clientId) {
         long currentTime = System.currentTimeMillis();
         if (slidingWindowCache.containsKey(clientId)) {
             Queue<Long> timestamps = slidingWindowCache.get(clientId);

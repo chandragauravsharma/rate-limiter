@@ -1,29 +1,27 @@
-package com.challenge.rateLimiter.handler;
+package com.challenge.rateLimiter.handler.impl;
 
+import com.challenge.rateLimiter.handler.RateLimitConfigData;
+import com.challenge.rateLimiter.handler.RateLimitHandler;
 import com.challenge.rateLimiter.model.TokenBucket;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@ConfigurationProperties("app")
 @Component
-public class TokenBucketHandler {
-    private static Map<String, TokenBucket> tokenBucketCache;
-    @Value("${app.token-bucket.max-default-tokens}")
+public class TokenBucketHandler implements RateLimitHandler {
+    private static Map<String, TokenBucket> tokenBucketCache = new HashMap<>();
     private int maxDefaultTokens;
-    @Value("${app.token-bucket.refresh-interval}")
     private int refreshInterval; // in secs
-    @Value("${app.token-bucket.new-tokens-every-refresh-interval}")
     private int newTokensEveryRefreshInterval;
 
-    public TokenBucketHandler() {
-        tokenBucketCache = new HashMap<>();
+    public TokenBucketHandler(RateLimitConfigData configData) {
+        this.maxDefaultTokens = configData.getMaxDefaultTokens();
+        this.refreshInterval = configData.getRefreshInterval();
+        this.newTokensEveryRefreshInterval = configData.getNewTokensEveryRefreshInterval();
     }
-    public Mono<Boolean> rateLimit(String clientId) {
+    public synchronized Mono<Boolean> rateLimit(String clientId) {
         if (tokenBucketCache.containsKey(clientId)) {
             // not first time user
             TokenBucket tokenBucket = tokenBucketCache.get(clientId);

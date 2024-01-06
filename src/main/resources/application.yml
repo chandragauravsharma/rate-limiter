@@ -1,14 +1,16 @@
 
 app:
-  token-bucket:
-    max-default-tokens: 10
-    refresh-interval: 1
-    new-tokens-every-refresh-interval: 1
+  algorithm: "sliding-window-log"
+  config:
+    token-bucket:
+      max-default-tokens: 10
+      refresh-interval: 1
+      new-tokens-every-refresh-interval: 1
 
-  fixed-window:
-    window-size-in-secs: 60
-    max-allowed-requests-per-window: 60
+    fixed-window:
+      window-size-in-secs: 60
+      max-allowed-requests-per-window: 60
 
-  sliding-window:
-    window-size-in-secs: 10
-    max-allowed-requests-per-window: 100
+    sliding-window:
+      window-size-in-secs: 10
+      max-allowed-requests-per-window: 10

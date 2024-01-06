@@ -1,28 +1,26 @@
-package com.challenge.rateLimiter.handler;
+package com.challenge.rateLimiter.handler.impl;
 
+import com.challenge.rateLimiter.handler.RateLimitConfigData;
+import com.challenge.rateLimiter.handler.RateLimitHandler;
 import com.challenge.rateLimiter.model.FixedWindowData;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@ConfigurationProperties("app")
 @Component
-public class FixedWindowHandler {
-    private static Map<String, FixedWindowData> fixedWindowCache;
-    @Value("${app.fixed-window.window-size-in-secs}")
+public class FixedWindowHandler implements RateLimitHandler {
+    private static Map<String, FixedWindowData> fixedWindowCache = new HashMap<>();
     private int windowSizeInSec;
-    @Value("${app.fixed-window.max-allowed-requests-per-window}")
     private int maxAllowedRequestsPerWindow;
 
-    public FixedWindowHandler() {
-        fixedWindowCache = new HashMap<>();
+    public FixedWindowHandler(RateLimitConfigData configData) {
+        this.windowSizeInSec = configData.getWindowSizeInSecFW();
+        this.maxAllowedRequestsPerWindow = configData.getMaxAllowedRequestsPerWindowFW();
     }
 
-    public Mono<Boolean> rateLimit(String clientId) {
+    public synchronized Mono<Boolean> rateLimit(String clientId) {
         if (fixedWindowCache.containsKey(clientId)) {
             int elapsedTimeInSec = (int)((System.currentTimeMillis() / 1000) - (fixedWindowCache.get(clientId).getLastWindowStartTime() / 1000));
             // check for a new window or not
